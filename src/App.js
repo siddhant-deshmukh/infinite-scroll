@@ -3,49 +3,70 @@ import bookQueryHook from "./bookQueryHook";
 
 function App() {
 
-  const [query,setQuery] = useState('')
+  
   const [pageNum,setPageNum] = useState(0)
 
-  const endOfPage = useRef()
-  const listOfSearches = useRef()
-  function handleChange(e){
-    setQuery(e.target.value)
-    setPageNum(1)
-  }
-  const {loading,error,bookList,hasMore} = bookQueryHook(query,pageNum)
-  
-  const reachingEndOfPage = useCallback((entry,observer)=>{
-    if(!hasMore) console.log(hasMore)
-    if(entry[0].isIntersecting && bookList.length>0 && pageNum>0 && !loading && hasMore){
-      console.log(" reached !!",bookList.length,pageNum,bookList.length)
-      setPageNum(pageNum+1)
-    }
-  },[pageNum,setPageNum,bookList,loading,hasMore])
-
+  const {loading,error,dataList,hasMore,setLoading} = bookQueryHook(pageNum)
   useEffect(()=>{
-    let options = {
-      root: null,
-      rootMargin: '20px',
-      threshold: 1.0
+    console.log("-------------------      !!!!  Here !!!!!!!!! ----------")
+    setPageNum(1)
+  },[])
+  const observer = useRef()
+  const topItem = useRef()
+  const endOfList = useRef()
+  
+  const listRef = useRef()
+  const prevTop = useRef()
+
+  const listUpdateObserver = useCallback((node)=>{
+    
+    if(loading) return
+    if(observer.current) observer.current.disconnect()
+    observer.current = new IntersectionObserver( (entries) =>{
+      if(entries[0].isIntersecting && dataList?.length >0 && hasMore){
+        console.log("Reached!!!",pageNum)
+        setPageNum((prev) => prev+1)
+      }
+    })
+    if(node) observer.current.observe(node)
+  },[loading,hasMore,dataList])
+  
+  
+  useEffect(()=>{
+    if(loading){
+      if(prevTop.current && pageNum > 1){
+        prevTop.current.scrollIntoView()
+      }else{
+        endOfList.current?.scrollIntoView()
+      }
+      prevTop.current = topItem.current
+      setLoading(false)
     }
-    let observer = new IntersectionObserver(reachingEndOfPage, options);
-    observer.observe(endOfPage.current  )
-  },[endOfPage,reachingEndOfPage])
+  },[dataList])
+  
   return (
-    <div ref={listOfSearches} id="scrollArea" className="App">
-      <input  value={query} onChange={handleChange}/>
-      <div >
-        {bookList.map((book)=>{
-          return <div key={book.key}>
-            {book.title}
-          </div>
-        })}
+    <div  id="scrollArea" className="App">
+      <div ref={listRef}>
+        <div ref={listUpdateObserver} >Start of page</div>
         {loading && <div>
           <svg className="spinner" viewBox="0 0 50 50">
             <circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle>
           </svg>
           </div>}
-        <div ref={endOfPage} >End of page</div>
+        
+        
+        {dataList && dataList.length >0 && dataList.map((ele,index)=>{
+          
+          if(index === 0 ){
+            return <div key={ele.key} ref={topItem} className="list-container">
+              {ele.key.toString()+ "  :"+ ele.data}
+            </div>
+          }
+          return <div key={ele.key} className="list-container">
+            {ele.key.toString()+ "  :"+ ele.data}
+          </div>
+        })}
+        <div ref={endOfList}></div>
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ code {
 }
 
 .App {
-  margin: 40px;
+  margin-left: 40px;
 }
 .spinner {
   animation: rotate 2s linear infinite;
@@ -26,6 +26,10 @@ code {
   animation: dash 1.5s ease-in-out infinite;
 }
 
+.list-container {
+  display: flex;
+  padding: 10px;
+}
 @keyframes rotate {
   100% {
     transform: rotate(360deg);
